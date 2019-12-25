@@ -1,0 +1,80 @@
+
+echo 0 > /sys/class/gpio/gpio42/value
+关闭WiFi
+ adk-message-send 'connectivity_wifi_disable{}'
+打开WiFi
+	adk-message-send 'connectivity_wifi_enable{}'
+扫描附近WiFi
+ adk-message-send 'connectivity_wifi_scan{}'
+
+连接WiFi1
+ adk-message-send 'connectivity_wifi_connect {ssid:"Tencent"password:"tymph@ny123" homeap:true}'
+
+ adk-message-send 'connectivity_wifi_completeonboarding{}'
+
+ 如果要改WiFi的账号密码，就要输入一下命令
+adk-message-send 'connectivity_wifi_onboard{}'    (这个命令可以断开连接)
+然后在输入ifconfig
+ adk-message-send 'connectivity_wifi_connect {ssid:"Tencent-5G"password:"tymph@ny123" homeap:true}'
+
+
+adk-message-send 'connectivity_wifi_connect {ssid:"Kim"password:"123456789" homeap:true}'
+打印出搜索到的WiFi的列表
+adk-message-monitor -a &
+有时候可能需要配合connectivity_wifi_scan{}，connectivity_wifi_onboard{}和来使用
+-----------------------------------------------------------------------------------------------------------
+wpa_cli scan_result可以扫描到附近的WiFi的结果
+包括bssid / frequency / signal level / flags / ssid
+
+查看wlan当前连接的情况
+
+  iw wlan0 link或者 wpa_cli status
+
+
+-----------------------------------------------------------------------------------------------------------
+soft ap 配置
+iw dev wlan0 interface add wlan1 type __ap
+
+ifconfig wlan1 192.168.43.1 netmask 255.255.255.0 up
+
+pkill -9 dnsmasq
+
+dnsmasq -i wlan1 --dhcp-range=192.168.43.10,192.168.43.100,12h --dhcp-leasefile=/data/dnsmasq_d.leases
+
+hostapd /etc/misc/wifi/hostapd-wlan1.conf
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- 
+iw reg set 			
+//such as "iw reg set CN" 
+
+查看目前country code
+iw reg get 			
+//will get current country code and channel info. /kernel/net/wireless/db.txt
+
+
+iwpriv wlan0 getChannelList 	      
+//this command will print all of the channel you support now;
+
+
+wpa_cli -i wlan0 driver COUNTRY CN 	
+//change to CN
+---------------------------------------------------------------------------------------------------------------------
+ insmod /usr/lib/modules/4.14.117/extra/wlan.ko
+
+-------------------------------------------------------------------------------------------------------
+查看adk命令列表
+ adkcfg -f /data/adk.connectivity.wifi.db list -a
+
+查看当前country code
+iw reg get 
+查看当前country code的ChannelList 
+iwpriv wlan0 getChannelList 
+
+
+	
+修改country code		
+adk-message-send 'connectivity_wifi_onboard{}'（断开wifi，以防连上）
+adkcfg -f /data/adk.connectivity.wifi.db write connectivity.wifi.onboard_ap_country_code CN --ignore（CN为国家代号）
+断电重启（adb reboot）
+需要重新连接wifi
+adk-message-send 'connectivity_wifi_connect {ssid:"Tencent-5G"password:"tymph@ny123" homeap:true}'
+完成
